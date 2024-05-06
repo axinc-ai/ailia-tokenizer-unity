@@ -1,0 +1,11 @@
+﻿{
+  "name": "ai.ailia.ailia_tokenizer",
+  "version": "1.1.0",
+  "displayName": "ailia Tokenizer",
+  "description": "ailia Tokenizer for Unity Engine",
+  "author": {
+    "name": "ax Inc.",
+    "email": "contact@axinc.jp",
+    "url": "https://axinc.jp/"
+  }
+}
