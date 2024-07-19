@@ -115,6 +115,28 @@ public class AiliaTokenizer
     */
     public const Int32 AILIA_TOKENIZER_TYPE_ROBERTA = (7);
 
+    /**
+    * \~japanese
+    * @def AILIA_TOKENIZER_TYPE_BERT_UNCASED
+    * @brief  BERT UNCASED向けのトークナイザ
+    *
+    * \~english
+    * @def AILIA_TOKENIZER_TYPE_BERT_UNCASED
+    * @brief Tokenizer for BERT UNCASED
+    */
+    public const Int32 AILIA_TOKENIZER_TYPE_BERT_UNCASED = (8);
+
+    /**
+    * \~japanese
+    * @def AILIA_TOKENIZER_TYPE_BERT_CASED
+    * @brief  BERT CASED向けのトークナイザ
+    *
+    * \~english
+    * @def AILIA_TOKENIZER_TYPE_BERT_CASED
+    * @brief Tokenizer for BERT CASED
+    */
+    public const Int32 AILIA_TOKENIZER_TYPE_BERT_CASED = (9);
+
     /****************************************************************
     * フラグ定義
     **/
