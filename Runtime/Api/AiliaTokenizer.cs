@@ -1,5 +1,5 @@
 /* ailia Tokenizer Unity Plugin Native Interface */
-/* Copyright 2023 AXELL CORPORATION */
+/* Copyright 2023 - 2024 AXELL CORPORATION */
 
 using UnityEngine;
 using System.Collections;
@@ -323,6 +323,30 @@ public class AiliaTokenizer
         
     /**
     * \~japanese
+    * @brief スペシャルトークンを含んだエンコードを行います。
+    * @param net トークナイザオブジェクトポインタ
+    * @param text エンコードするテキスト(UTF8)
+    * @return
+    *   成功した場合は \ref AILIA_STATUS_SUCCESS 、そうでなければエラーコードを返す。
+    * @details
+    *   認識した結果はailiaTokenizerGetTokens APIで取得します。
+    *   split_special_tokens=Falseと同様に、Special Tokenを出力します。
+    *
+    * \~english
+    * @brief Perform encode with special tokens
+    * @param net A tokenizer instance pointer
+    * @param text Text for encode (UTF8)
+    * @return
+    *   If this function is successful, it returns  \ref AILIA_STATUS_SUCCESS , or an error code otherwise.
+    * @details
+    *   Get the encoded result with ailiaTokenizerGetTokens API.
+    *   Similarly to split_special_tokens=False, special tokens will be output.
+    */
+    [DllImport(LIBRARY_NAME)]
+    public static extern int ailiaTokenizerEncodeWithSpecialTokens(IntPtr net, IntPtr utf8);
+        
+    /**
+    * \~japanese
     * @brief トークンの数を取得します。
     * @param net   トークナイザオブジェクトポインタ
     * @param count  オブジェクト数
@@ -390,6 +414,32 @@ public class AiliaTokenizer
 
     /**
     * \~japanese
+    * @brief スペシャルトークンを含んだデコードを行います。
+    * @param net トークナイザオブジェクトポインタ
+    * @param tokens デコードするトークン
+    * @param token_count トークンの数
+    * @return
+    *   成功した場合は \ref AILIA_STATUS_SUCCESS 、そうでなければエラーコードを返す。
+    * @details
+    *   デコードした結果はailiaTokenizerGetText APIで取得します。
+    *   skip_special_tokens=Falseと同様に、Special Tokenを出力します。
+    *
+    * \~english
+    * @brief Perform decode with special tokens
+    * @param net A tokenizer instance pointer
+    * @param tokens Tokens for decode
+    * @param token_count The number of tokens
+    * @return
+    *   If this function is successful, it returns  \ref AILIA_STATUS_SUCCESS , or an error code otherwise.
+    * @details
+    *   Get the decoded result with ailiaTokenizerGetText API.
+    *   Similarly to skip_special_tokens=False, special tokens will be output.
+    */
+    [DllImport(LIBRARY_NAME)]
+    public static extern int ailiaTokenizerDecodeWithSpecialTokens(IntPtr net, IntPtr tokens, uint token_count);
+
+    /**
+    * \~japanese
     * @brief テキストの長さを取得します。(NULL文字含む)
     * @param net   トークナイザオブジェクトポインタ
     * @param len  テキストの長さ
@@ -429,6 +479,50 @@ public class AiliaTokenizer
     */
     [DllImport(LIBRARY_NAME)]
     public static extern int ailiaTokenizerGetText(IntPtr net, IntPtr text, uint len);
+
+    /**
+    * \~japanese
+    * @brief Vocabの数を取得します。
+    * @param net   トークナイザオブジェクトポインタ
+    * @param size  Vocabの要素数
+    * @return
+    *   成功した場合は \ref AILIA_STATUS_SUCCESS 、そうでなければエラーコードを返す。
+    *
+    * \~english
+    * @brief Gets the size of vocab. (Include null)
+    * @param net   A tokenizer instance pointer
+    * @param size  The size of vocab
+    * @return
+    *   If this function is successful, it returns  \ref AILIA_STATUS_SUCCESS , or an error code otherwise.
+    */
+    [DllImport(LIBRARY_NAME)]
+    public static extern int ailiaTokenizerGetVocabSize(IntPtr net, ref uint size);
+
+    /**
+    * \~japanese
+    * @brief Vocabの取得を行います。
+    * @param net トークナイザオブジェクトポインタ
+    * @param token トークン
+    * @param vocab Vocabのテキスト(UTF8)
+    * @return
+    *   成功した場合は \ref AILIA_STATUS_SUCCESS 、そうでなければエラーコードを返す。
+    * @details
+    *   vocabを解放する必要はありません。
+    *   vocabの有効期間は次にailiaTokenizer APIを呼び出すまでになります。
+    *
+    * \~english
+    * @brief Perform encode
+    * @param net A tokenizer instance pointer
+    * @param token Token
+    * @param text Text of vocab (UTF8)
+    * @return
+    *   If this function is successful, it returns  \ref AILIA_STATUS_SUCCESS , or an error code otherwise.
+    * @details
+    *   There is no need to release the vocab.
+    *   The validity period of the vocab will last until the next time the ailiaTokenizer API is called.
+    */
+    [DllImport(LIBRARY_NAME)]
+    public static extern int ailiaTokenizerGetVocab(IntPtr net, int token, ref IntPtr vocab);
 
     /**
     * \~japanese
