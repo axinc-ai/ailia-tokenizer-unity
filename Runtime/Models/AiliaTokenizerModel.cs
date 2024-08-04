@@ -1,5 +1,5 @@
 /* ailia.tokenizer model class */
-/* Copyright 2023 AXELL CORPORATION */
+/* Copyright 2023 - 2024 AXELL CORPORATION */
 
 using System.Collections;
 using System.Collections.Generic;
@@ -142,6 +142,72 @@ public class AiliaTokenizerModel : IDisposable
 	 * エンコードとデコード
 	 */
 
+	private int[] EncodeCore(string utf8, bool special_tokens)
+	{
+		byte[] text = System.Text.Encoding.UTF8.GetBytes(utf8+"\u0000");
+		GCHandle handle = GCHandle.Alloc(text, GCHandleType.Pinned);
+		IntPtr input = handle.AddrOfPinnedObject();
+		int status;
+		if (special_tokens){
+			status = AiliaTokenizer.ailiaTokenizerEncodeWithSpecialTokens(net, input);
+		}else{
+			status = AiliaTokenizer.ailiaTokenizerEncode(net, input);
+		}
+		handle.Free();
+		if (status != 0){
+			return new int[0];
+		}
+		uint count = 0;
+		status = AiliaTokenizer.ailiaTokenizerGetTokenCount(net, ref count);
+		if (status != 0){
+			return new int[0];
+		}
+		int[] tokens = new int [count];
+		handle = GCHandle.Alloc(tokens, GCHandleType.Pinned);
+		IntPtr output = handle.AddrOfPinnedObject();
+		status = AiliaTokenizer.ailiaTokenizerGetTokens(net, output, count);
+		handle.Free();
+		if (status != 0){
+			return new int[0];
+		}
+		return tokens;
+	}
+
+	private string DecodeCore(int[] tokens, bool special_tokens)
+	{
+		uint count = (uint)tokens.Length;
+		GCHandle handle = GCHandle.Alloc(tokens, GCHandleType.Pinned);
+		IntPtr input = handle.AddrOfPinnedObject();
+		int status;
+		if (special_tokens){
+			status = AiliaTokenizer.ailiaTokenizerDecodeWithSpecialTokens(net, input, count);
+		} else {
+			status = AiliaTokenizer.ailiaTokenizerDecode(net, input, count);
+		}
+		handle.Free();
+		if (status != 0){
+			return "";
+		}
+		uint len = 0;
+		status = AiliaTokenizer.ailiaTokenizerGetTextLength(net, ref len);
+		if (status != 0){
+			return "";
+		}
+		byte[] text = new byte [len];
+		handle = GCHandle.Alloc(text, GCHandleType.Pinned);
+		IntPtr output = handle.AddrOfPinnedObject();
+		status = AiliaTokenizer.ailiaTokenizerGetText(net, output, len);
+		handle.Free();
+		if (status != 0){
+			return "";
+		}
+		byte[] text_split = new byte [len - 1]; // NULLも時の削除
+		for (int i = 0; i < len - 1; i++){
+			text_split[i] = text[i];
+		}
+		return System.Text.Encoding.UTF8.GetString(text_split);
+	}
+
 	/**
 	* \~japanese
 	* @brief エンコードを実行します。
@@ -157,28 +223,25 @@ public class AiliaTokenizerModel : IDisposable
 	*/
 	public int[] Encode(string utf8)
 	{
-		byte[] text = System.Text.Encoding.UTF8.GetBytes(utf8+"\u0000");
-        GCHandle handle = GCHandle.Alloc(text, GCHandleType.Pinned);
-        IntPtr input = handle.AddrOfPinnedObject();
-		int status = AiliaTokenizer.ailiaTokenizerEncode(net, input);
-		handle.Free();
-		if (status != 0){
-			return new int[0];
-		}
-		uint count = 0;
-		status = AiliaTokenizer.ailiaTokenizerGetTokenCount(net, ref count);
-		if (status != 0){
-			return new int[0];
-		}
-		int[] tokens = new int [count];
-        handle = GCHandle.Alloc(tokens, GCHandleType.Pinned);
-        IntPtr output = handle.AddrOfPinnedObject();
-		status = AiliaTokenizer.ailiaTokenizerGetTokens(net, output, count);
-		handle.Free();
-		if (status != 0){
-			return new int[0];
-		}
-		return tokens;
+		return EncodeCore(utf8, false);
+	}
+
+	/**
+	* \~japanese
+	* @brief スペシャルトークンを含んだエンコードを実行します。
+	* @param utf8    入力文字列
+	* @return
+	*   成功した場合はトークン列、失敗した場合は空配列を返す。
+	*   
+	* \~english
+	* @brief   Perform encode with special tokens
+	* @param utf8    Input string
+	* @return
+	*   If this function is successful, it returns array of tokens  , or  empty array  otherwise.
+	*/
+	public int[] EncodeWithSpecialTokens(string utf8)
+	{
+		return EncodeCore(utf8, true);
 	}
 
 	/**
@@ -196,28 +259,69 @@ public class AiliaTokenizerModel : IDisposable
 	*/
 	public string Decode(int[] tokens)
 	{
-		uint count = (uint)tokens.Length;
-        GCHandle handle = GCHandle.Alloc(tokens, GCHandleType.Pinned);
-        IntPtr input = handle.AddrOfPinnedObject();
-		int status = AiliaTokenizer.ailiaTokenizerDecode(net, input, count);
-		handle.Free();
-		if (status != 0){
-			return "";
-		}
+		return DecodeCore(tokens, false);
+	}
+
+	/**
+	* \~japanese
+	* @brief スペシャルトークンを含んだデコードを実行します。
+	* @pram tokens   入力トークン
+	* @return
+	*   成功した場合は文字列、失敗した場合は空文字列を返す。
+	*   
+	* \~english
+	* @brief   Perform decode with special tokens
+	* @pram tokens   Input tokens
+	* @return
+	*   If this function is successful, it returns  string  , or  empty string  otherwise.
+	*/
+	public string DecodeWithSpecialTokens(int[] tokens)
+	{
+		return DecodeCore(tokens, true);
+	}
+
+    /**
+    * \~japanese
+    * @brief Vocabの数を取得します。
+    * @return
+    *   成功した場合は 0以上の数値 、そうでなければ-1を返す。
+    *
+    * \~english
+    * @brief Gets the size of vocab.
+    * @return
+    *   If this function is successful, it returns the size of vocab , or -1 otherwise.
+    */
+	public int GetVocabSize()
+	{
 		uint len = 0;
-		status = AiliaTokenizer.ailiaTokenizerGetTextLength(net, ref len);
+		int status = AiliaTokenizer.ailiaTokenizerGetVocabSize(net, ref len);
 		if (status != 0){
-			return "";
+			return -1;
 		}
-		byte[] text = new byte [len];
-        handle = GCHandle.Alloc(text, GCHandleType.Pinned);
-        IntPtr output = handle.AddrOfPinnedObject();
-		status = AiliaTokenizer.ailiaTokenizerGetText(net, output, len);
-		handle.Free();
+		return (int)len;
+	}
+
+    /**
+    * \~japanese
+    * @brief Vocabの取得を行います。
+    * @param token トークン
+    * @return
+    *   成功した場合は string 、そうでなければnullを返す。
+    *
+    * \~english
+    * @brief Perform encode
+    * @param token Token
+    * @return
+    *   If this function is successful, it returns string , or null otherwise.
+    */
+	public string GetVocab(int token)
+	{
+		IntPtr ptr = IntPtr.Zero;
+		int status = AiliaTokenizer.ailiaTokenizerGetVocab(net, token, ref ptr);
 		if (status != 0){
-			return "";
+			return null;
 		}
-		return System.Text.Encoding.UTF8.GetString(text);
+		return Marshal.PtrToStringAnsi(ptr);
 	}
 }
 } // namespace ailiaTokenizer
